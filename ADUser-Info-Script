@@ -1,0 +1,24 @@
+#Export Active Directory user attributes to an Excel spreadsheet
+ 
+
+Import-Module ActiveDirectory
+
+Import-Module ImportExcel
+
+ 
+
+Get-ADUser -Filter * -Properties * |
+
+    Select-Object sn,SamAccountName,Description,AccountExpirationDate,Enabled,PasswordNeverExpires,LastLogonDate |
+
+   
+
+Export-Excel -Path "$env:HOMEPATH\Desktop\ADUsers_$(Get-Date -Format 'ddMMyyyy').xlsx"
+
+-TableStyle "Light 21"
+
+-AutoSize
+
+-BoldTopRow
+
+-Show
