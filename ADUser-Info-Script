@@ -1,24 +1,32 @@
-#Export Active Directory user attributes to an Excel spreadsheet
- 
+# Export Active Directory user attributes to an Excel spreadsheet
 
 Import-Module ActiveDirectory
-
 Import-Module ImportExcel
 
- 
+$path = "$env:USERPROFILE\Desktop\ADUser-Attributes_$(Get-Date -Format 'MM-dd-yyyy').xlsx"
 
-Get-ADUser -Filter * -Properties * |
+$users = Get-ADUser -Filter * -Properties * |
+    Select-Object `
+        sn,
+        SamAccountName,
+        Description,
+        @{Name='AccountExpirationDate'; Expression={ if ($_.AccountExpirationDate) { $_.AccountExpirationDate.ToString('MM/dd/yyyy') } else { $null } }},
+        Enabled,
+        PasswordNeverExpires,
+        @{Name='LastLogonDate'; Expression={ if ($_.LastLogonDate) { $_.LastLogonDate.ToString('MM/dd/yyyy') } else { $null } }}
 
-    Select-Object sn,SamAccountName,Description,AccountExpirationDate,Enabled,PasswordNeverExpires,LastLogonDate |
+$excelPackage = $users | Export-Excel -Path $path `
+    -WorksheetName 'AD Users' `
+    -TableStyle 'Light21' `
+    -BoldTopRow `
+    -AutoSize `
+    -FreezeTopRow `
+    -PassThru
 
-   
+$ws = $excelPackage.Workbook.Worksheets['AD Users']
 
-Export-Excel -Path "$env:HOMEPATH\Desktop\ADUsers_$(Get-Date -Format 'ddMMyyyy').xlsx"
+# Apply formatting to the used range
+Set-Format -Worksheet $ws -Range $ws.Dimension.Address -WrapText -HorizontalAlignment Left -VerticalAlignment Top
 
--TableStyle "Light 21"
-
--AutoSize
-
--BoldTopRow
-
--Show
+# Save and close
+Close-ExcelPackage $excelPackage
